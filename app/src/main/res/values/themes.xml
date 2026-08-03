@@ -1,0 +1,10 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- Base application theme for Compose -->
+    <!-- Using AppCompat instead of Material3 since all UI is in Compose -->
+    <style name="Base.Theme.SmartPesa" parent="Theme.AppCompat.DayNight.NoActionBar">
+        <!-- Transparent background - Compose handles all theming -->
+        <item name="android:windowBackground">@android:color/transparent</item>
+    </style>
+
+    <style name="Theme.SmartPesa" parent="Base.Theme.SmartPesa" />
+</resources>
