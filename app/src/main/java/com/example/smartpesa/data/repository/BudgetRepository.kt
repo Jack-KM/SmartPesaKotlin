@@ -27,6 +27,18 @@ class BudgetRepository @Inject constructor(
         return budgetDao.getByCategory(categoryId)
     }
 
+    suspend fun countByAccountName(accountName: String): Int {
+        return budgetDao.countByAccountName(accountName)
+    }
+
+    suspend fun reassignAccountName(oldName: String, newName: String) {
+        budgetDao.reassignAccountName(oldName, newName)
+    }
+
+    suspend fun deleteByAccountName(accountName: String) {
+        budgetDao.deleteByAccountName(accountName)
+    }
+
     suspend fun insertBudget(budget: Budget): Long {
         return budgetDao.insert(budget)
     }

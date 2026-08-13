@@ -1,6 +1,13 @@
 package com.example.smartpesa.data.mpesa
 
 import java.util.regex.Pattern
+import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.LocalTime
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
+import java.time.format.DateTimeParseException
+import java.util.Locale
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -29,7 +36,7 @@ class MpesaSmsParser @Inject constructor() {
 
         // Balance: "New M-PESA balance is Ksh0.00" or "Your M-PESA balance is 1218.98"
         private val BALANCE_PATTERN = Pattern.compile(
-            "(?:New M-PESA balance is|Your M-PESA balance is)\\s+(?:Ksh|KES)\\.?\\s*([0-9,]+\\.?[0-9]*)",
+            "(?:New M-PESA balance is|Your M-PESA balance is)\\s+(?:(?:Ksh|KES)\\.?\\s*)?([0-9,]+\\.?[0-9]*)",
             Pattern.CASE_INSENSITIVE
         )
 
@@ -92,6 +99,31 @@ class MpesaSmsParser @Inject constructor() {
             "from your M-PESA has been used to.*?pay.*?Fuliza",
             Pattern.CASE_INSENSITIVE
         )
+
+        // FULIZA_ACCESS: "You have accessed Ksh500.00 from Fuliza M-PESA"
+        // OR notification: "Fuliza M-PESA amount is Ksh40.00. Access Fee charged Ksh0.40."
+        private val FULIZA_ACCESS_PATTERN = Pattern.compile(
+            "accessed.*?from Fuliza|Fuliza.*?limit.*?Ksh|Fuliza M-PESA amount is",
+            Pattern.CASE_INSENSITIVE
+        )
+
+        // Access fee in Fuliza notification: "Access Fee charged Ksh 0.40"
+        private val FULIZA_ACCESS_FEE_PATTERN = Pattern.compile(
+            "Access Fee charged\\s+(?:Ksh|KES)\\.?\\s*([0-9,]+\\.?[0-9]*)",
+            Pattern.CASE_INSENSITIVE
+        )
+
+        // Outstanding in Fuliza notification: "Total Fuliza M-PESA outstanding amount is Ksh748.38"
+        private val FULIZA_OUTSTANDING_PATTERN = Pattern.compile(
+            "outstanding amount is\\s+(?:Ksh|KES)\\.?\\s*([0-9,]+\\.?[0-9]*)",
+            Pattern.CASE_INSENSITIVE
+        )
+
+        // Due date in Fuliza notification: "due on 10/09/26"
+        private val FULIZA_DUE_PATTERN = Pattern.compile(
+            "due on\\s+([0-9]{1,2}/[0-9]{1,2}/[0-9]{2,4})",
+            Pattern.CASE_INSENSITIVE
+        )
     }
 
     /**
@@ -106,34 +138,39 @@ class MpesaSmsParser @Inject constructor() {
             return null
         }
 
+        val messageTimestamp = extractMessageTimestamp(smsBody) ?: timestamp
+
         // Extract transaction code (required for all M-Pesa messages)
         val mpesaCode = extractCode(smsBody) ?: return null
 
         // Determine transaction type and extract relevant fields
         return when {
             FULIZA_REPAYMENT_PATTERN.matcher(smsBody).find() -> {
-                parseFulizaRepayment(smsBody, mpesaCode, timestamp)
+                parseFulizaRepayment(smsBody, mpesaCode, messageTimestamp)
+            }
+            FULIZA_ACCESS_PATTERN.matcher(smsBody).find() -> {
+                parseFulizaAccess(smsBody, mpesaCode, messageTimestamp)
             }
             WITHDRAWAL_PATTERN.matcher(smsBody).find() -> {
-                parseWithdrawal(smsBody, mpesaCode, timestamp)
+                parseWithdrawal(smsBody, mpesaCode, messageTimestamp)
             }
             DEPOSIT_PATTERN.matcher(smsBody).find() -> {
-                parseDeposit(smsBody, mpesaCode, timestamp)
+                parseDeposit(smsBody, mpesaCode, messageTimestamp)
             }
             AIRTIME_PATTERN.matcher(smsBody).find() -> {
-                parseAirtime(smsBody, mpesaCode, timestamp)
+                parseAirtime(smsBody, mpesaCode, messageTimestamp)
             }
             TOKEN_PATTERN.matcher(smsBody).find() -> {
-                parseTokenPurchase(smsBody, mpesaCode, timestamp)
+                parseTokenPurchase(smsBody, mpesaCode, messageTimestamp)
             }
             RECEIVE_PATTERN.matcher(smsBody).find() -> {
-                parseReceive(smsBody, mpesaCode, timestamp)
+                parseReceive(smsBody, mpesaCode, messageTimestamp)
             }
             SEND_PATTERN.matcher(smsBody).find() && !smsBody.contains("for account", ignoreCase = true) -> {
-                parseSend(smsBody, mpesaCode, timestamp)
+                parseSend(smsBody, mpesaCode, messageTimestamp)
             }
             PAYBILL_PATTERN.matcher(smsBody).find() -> {
-                parsePaybill(smsBody, mpesaCode, timestamp)
+                parsePaybill(smsBody, mpesaCode, messageTimestamp)
             }
             else -> {
                 // Unrecognized format - return UNKNOWN type with basic info
@@ -143,10 +180,65 @@ class MpesaSmsParser @Inject constructor() {
                     mpesaCode = mpesaCode,
                     balance = extractBalance(smsBody),
                     rawSmsBody = smsBody,
-                    timestamp = timestamp
+                    timestamp = messageTimestamp
                 )
             }
         }
+    }
+
+    private fun extractMessageTimestamp(smsBody: String): Long? {
+        val patterns = listOf(
+            Pattern.compile(
+                "(?i)\\bon\\s+(\\d{1,2}[/-]\\d{1,2}[/-]\\d{2,4})\\s+at\\s+(\\d{1,2}:\\d{2}\\s*[AP]M)"
+            ),
+            Pattern.compile(
+                "(?i)\\bon\\s+(\\d{1,2}[/-]\\d{1,2}[/-]\\d{2,4})\\s+at\\s+(\\d{1,2}:\\d{2})"
+            )
+        )
+
+        for (pattern in patterns) {
+            val matcher = pattern.matcher(smsBody)
+            if (!matcher.find()) continue
+
+            val dateText = matcher.group(1)
+            val timeText = matcher.group(2)
+            val parsedDate = parseMessageDate(dateText) ?: continue
+            val parsedTime = parseMessageTime(timeText) ?: continue
+            return LocalDateTime.of(parsedDate, parsedTime)
+                .atZone(ZoneId.systemDefault())
+                .toInstant()
+                .toEpochMilli()
+        }
+
+        return null
+    }
+
+    private fun parseMessageDate(value: String): LocalDate? {
+        val normalized = value.replace('-', '/')
+        val formats = listOf("d/M/uuuu", "dd/MM/uuuu", "d/M/uu", "dd/MM/uu")
+
+        for (pattern in formats) {
+            try {
+                return LocalDate.parse(normalized, DateTimeFormatter.ofPattern(pattern, Locale.ENGLISH))
+            } catch (_: DateTimeParseException) {
+            }
+        }
+
+        return null
+    }
+
+    private fun parseMessageTime(value: String): LocalTime? {
+        val normalized = value.trim().uppercase(Locale.ENGLISH)
+        val formats = listOf("h:mm a", "hh:mm a", "H:mm", "HH:mm")
+
+        for (pattern in formats) {
+            try {
+                return LocalTime.parse(normalized, DateTimeFormatter.ofPattern(pattern, Locale.ENGLISH))
+            } catch (_: DateTimeParseException) {
+            }
+        }
+
+        return null
     }
 
     private fun parseSend(smsBody: String, code: String, timestamp: Long): ParsedTransaction {
@@ -269,6 +361,33 @@ class MpesaSmsParser @Inject constructor() {
             type = TransactionType.FULIZA_REPAYMENT,
             amount = extractAmount(smsBody) ?: 0.0,
             feeAmount = null,
+            counterpartyName = "Fuliza M-PESA",
+            mpesaCode = code,
+            balance = extractBalance(smsBody),
+            rawSmsBody = smsBody,
+            timestamp = timestamp
+        )
+    }
+
+    private fun parseFulizaAccess(smsBody: String, code: String, timestamp: Long): ParsedTransaction {
+        val accessFeeMatcher = FULIZA_ACCESS_FEE_PATTERN.matcher(smsBody)
+        val accessFee = if (accessFeeMatcher.find())
+            accessFeeMatcher.group(1)?.replace(",", "")?.toDoubleOrNull() else null
+
+        val outstandingMatcher = FULIZA_OUTSTANDING_PATTERN.matcher(smsBody)
+        val outstanding = if (outstandingMatcher.find())
+            outstandingMatcher.group(1)?.replace(",", "")?.toDoubleOrNull() else null
+
+        val dueMatcher = FULIZA_DUE_PATTERN.matcher(smsBody)
+        val dueDate = if (dueMatcher.find()) dueMatcher.group(1) else null
+
+        return ParsedTransaction(
+            type = TransactionType.FULIZA_ACCESS,
+            amount = extractAmount(smsBody) ?: 0.0,
+            feeAmount = extractFee(smsBody),
+            fulizaAccessFee = accessFee,
+            fulizaOutstanding = outstanding,
+            fulizaDueDate = dueDate,
             counterpartyName = "Fuliza M-PESA",
             mpesaCode = code,
             balance = extractBalance(smsBody),

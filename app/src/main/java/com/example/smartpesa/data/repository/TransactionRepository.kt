@@ -33,6 +33,38 @@ class TransactionRepository @Inject constructor(
         return transactionDao.getByCategory(categoryId)
     }
 
+    fun getTransactionsByCategoryName(category: String): Flow<List<Transaction>> {
+        return transactionDao.getByCategoryName(category)
+    }
+
+    fun getTransactionsByAccountName(accountName: String): Flow<List<Transaction>> {
+        return transactionDao.getByAccountName(accountName)
+    }
+
+    suspend fun countByCategoryName(category: String): Int {
+        return transactionDao.countByCategoryName(category)
+    }
+
+    suspend fun countByAccountName(accountName: String): Int {
+        return transactionDao.countByAccountName(accountName)
+    }
+
+    suspend fun reassignAccountName(oldName: String, newName: String) {
+        transactionDao.reassignAccountName(oldName, newName)
+    }
+
+    suspend fun deleteByAccountName(accountName: String) {
+        transactionDao.deleteByAccountName(accountName)
+    }
+
+    fun getTransactionsByRelatedLoanId(loanId: Long): Flow<List<Transaction>> {
+        return transactionDao.getByRelatedLoanId(loanId)
+    }
+
+    fun getTransactionsByRelatedFulizaId(fulizaId: Long): Flow<List<Transaction>> {
+        return transactionDao.getByRelatedFulizaId(fulizaId)
+    }
+
     fun getTransactionsByDateRange(
         startDate: LocalDateTime,
         endDate: LocalDateTime
@@ -79,5 +111,18 @@ class TransactionRepository @Inject constructor(
     // Duplicate detection for M-Pesa SMS processing
     suspend fun getByMpesaCode(mpesaCode: String): Transaction? {
         return transactionDao.getByMpesaCode(mpesaCode)
+    }
+
+    // Work transaction operations
+    fun getWorkTransactions(): Flow<List<Transaction>> {
+        return transactionDao.getWorkTransactions()
+    }
+
+    fun getPersonalTransactions(): Flow<List<Transaction>> {
+        return transactionDao.getPersonalTransactions()
+    }
+
+    fun getWorkBalance(): Flow<Double?> {
+        return transactionDao.getWorkBalance()
     }
 }

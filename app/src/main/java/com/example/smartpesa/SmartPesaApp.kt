@@ -4,6 +4,8 @@ import android.app.Application
 import androidx.hilt.work.HiltWorkerFactory
 import androidx.work.Configuration
 import com.example.smartpesa.data.initialization.CategoryInitializer
+import com.example.smartpesa.data.initialization.AccountInitializer
+import com.example.smartpesa.data.initialization.PayeeCategoryRuleInitializer
 import dagger.hilt.android.HiltAndroidApp
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -26,14 +28,22 @@ class SmartPesaApp : Application(), Configuration.Provider {
     @Inject
     lateinit var categoryInitializer: CategoryInitializer
 
+    @Inject
+    lateinit var accountInitializer: AccountInitializer
+
+    @Inject
+    lateinit var payeeCategoryRuleInitializer: PayeeCategoryRuleInitializer
+
     private val applicationScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     override fun onCreate() {
         super.onCreate()
 
-        // Initialize categories on first app launch
+        // Initialize categories and default rules on first app launch
         applicationScope.launch {
             categoryInitializer.initializeIfNeeded()
+            accountInitializer.initializeIfNeeded()
+            payeeCategoryRuleInitializer.initializeIfNeeded()
         }
     }
 

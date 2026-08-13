@@ -21,6 +21,7 @@ fun AddBudgetDialog(
     val categories by viewModel.categories.collectAsState()
     val selectedCategory by viewModel.selectedCategory.collectAsState()
     val budgetAmount by viewModel.budgetAmount.collectAsState()
+    val validationError by viewModel.validationError.collectAsState()
 
     var expandedDropdown by remember { mutableStateOf(false) }
 
@@ -80,6 +81,14 @@ fun AddBudgetDialog(
                         keyboardType = KeyboardType.Decimal
                     )
                 )
+
+                if (validationError != null) {
+                    Text(
+                        text = validationError.orEmpty(),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.error
+                    )
+                }
 
                 if (categories.isEmpty()) {
                     Text(

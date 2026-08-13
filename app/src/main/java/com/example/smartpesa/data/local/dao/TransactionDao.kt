@@ -33,6 +33,30 @@ interface TransactionDao {
     @Query("SELECT * FROM transactions WHERE categoryId = :categoryId ORDER BY timestamp DESC")
     fun getByCategory(categoryId: Long): Flow<List<Transaction>>
 
+    @Query("SELECT * FROM transactions WHERE category = :category ORDER BY timestamp DESC")
+    fun getByCategoryName(category: String): Flow<List<Transaction>>
+
+    @Query("SELECT * FROM transactions WHERE accountName = :accountName ORDER BY timestamp DESC")
+    fun getByAccountName(accountName: String): Flow<List<Transaction>>
+
+    @Query("SELECT COUNT(*) FROM transactions WHERE category = :category")
+    suspend fun countByCategoryName(category: String): Int
+
+    @Query("SELECT COUNT(*) FROM transactions WHERE accountName = :accountName")
+    suspend fun countByAccountName(accountName: String): Int
+
+    @Query("UPDATE transactions SET accountName = :newName WHERE accountName = :oldName")
+    suspend fun reassignAccountName(oldName: String, newName: String)
+
+    @Query("DELETE FROM transactions WHERE accountName = :accountName")
+    suspend fun deleteByAccountName(accountName: String)
+
+    @Query("SELECT * FROM transactions WHERE relatedLoanId = :loanId ORDER BY timestamp DESC")
+    fun getByRelatedLoanId(loanId: Long): Flow<List<Transaction>>
+
+    @Query("SELECT * FROM transactions WHERE relatedFulizaId = :fulizaId ORDER BY timestamp DESC")
+    fun getByRelatedFulizaId(fulizaId: Long): Flow<List<Transaction>>
+
     @Query("SELECT * FROM transactions WHERE timestamp BETWEEN :startDate AND :endDate ORDER BY timestamp DESC")
     fun getByDateRange(startDate: LocalDateTime, endDate: LocalDateTime): Flow<List<Transaction>>
 
@@ -56,4 +80,19 @@ interface TransactionDao {
     // Duplicate detection for M-Pesa SMS - check if transaction code already exists
     @Query("SELECT * FROM transactions WHERE mpesaCode = :mpesaCode LIMIT 1")
     suspend fun getByMpesaCode(mpesaCode: String): Transaction?
+
+    // Work transaction queries
+    @Query("SELECT * FROM transactions WHERE isWorkTransaction = 1 ORDER BY timestamp DESC")
+    fun getWorkTransactions(): Flow<List<Transaction>>
+
+    @Query("SELECT * FROM transactions WHERE isWorkTransaction = 0 ORDER BY timestamp DESC")
+    fun getPersonalTransactions(): Flow<List<Transaction>>
+
+    @Query("""
+        SELECT
+            SUM(CASE WHEN type = 'INCOME' THEN amount - feeAmount ELSE -(amount + feeAmount) END)
+        FROM transactions
+        WHERE isWorkTransaction = 1
+    """)
+    fun getWorkBalance(): Flow<Double?>
 }

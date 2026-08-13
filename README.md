@@ -8,6 +8,8 @@ Android app for tracking M-Pesa money flow from SMS, notification listener, or m
 - Watches M-Pesa notifications as another capture path.
 - Organizes transactions into categories and budgets.
 - Shows home, transactions, budget, and settings screens in a Compose UI.
+- Adds detail routes for transactions, budgets, and loans.
+- Adds placeholder pages for loans, Fuliza, reports, costs, and about.
 - Stores data locally with Room; no backend in code.
 
 ## Supported transaction types
@@ -46,6 +48,9 @@ Android app for tracking M-Pesa money flow from SMS, notification listener, or m
 ```sh
 ./gradlew assembleDebug
 ```
+
+## Current app flow
+See `APP_FLOW.md` for screen inventory, navigation, and current gaps.
 
 Open the project in Android Studio or install the debug APK on an Android 7.0+ device.
 

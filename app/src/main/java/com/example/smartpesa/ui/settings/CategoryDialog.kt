@@ -26,6 +26,7 @@ fun CategoryDialog(
     val editingCategory by viewModel.editingCategory.collectAsState()
     val categoryName by viewModel.categoryName.collectAsState()
     val categoryType by viewModel.categoryType.collectAsState()
+    val validationError by viewModel.validationError.collectAsState()
 
     val isEditing = editingCategory != null
     val title = if (isEditing) "Edit Category" else "Add Category"
@@ -101,6 +102,14 @@ fun CategoryDialog(
                             }
                         }
                     }
+                }
+
+                if (validationError != null) {
+                    Text(
+                        text = validationError.orEmpty(),
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodySmall
+                    )
                 }
             }
         },

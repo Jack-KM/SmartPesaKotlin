@@ -116,6 +116,7 @@ class MpesaNotificationListenerService : NotificationListenerService() {
             ),
             categoryId = null, // User can categorize later
             source = "M-Pesa Notification",
+            mpesaMessage = notificationText,
             mpesaCode = parsedTransaction.mpesaCode,
             originalSmsBody = notificationText
         )
@@ -155,6 +156,7 @@ class MpesaNotificationListenerService : NotificationListenerService() {
             com.example.smartpesa.data.mpesa.TransactionType.TOKEN_PURCHASE -> "Token purchase ($counterparty)"
             com.example.smartpesa.data.mpesa.TransactionType.DEPOSIT -> "Deposit at $counterparty"
             com.example.smartpesa.data.mpesa.TransactionType.FULIZA_REPAYMENT -> "Fuliza M-PESA repayment"
+            com.example.smartpesa.data.mpesa.TransactionType.FULIZA_ACCESS -> "Fuliza M-PESA access"
             com.example.smartpesa.data.mpesa.TransactionType.UNKNOWN -> "Transaction: $counterparty"
         }
     }

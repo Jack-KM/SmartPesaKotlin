@@ -28,17 +28,37 @@ data class Budget(
     // Foreign key to Category
     val categoryId: Long,
 
+    // Optional account linkage for account-specific budgets
+    val accountName: String? = null,
+
     // Budget limit amount
-    val amount: Double,
+    val limit: Double,
 
     // Budget period
     val period: BudgetPeriod,
 
     // Start date of the budget
-    val startDate: LocalDateTime
-)
+    val startDate: LocalDateTime,
+
+    // Optional end date for custom budgets
+    val endDate: LocalDateTime? = null,
+
+    // Stored progress values for quick rendering
+    val spent: Double = 0.0,
+    val remaining: Double = 0.0,
+
+    // Display label used when category relation is unavailable
+    val category: String = ""
+){
+    val amount: Double
+        get() = limit
+
+    val isCustomPeriod: Boolean
+        get() = period == BudgetPeriod.CUSTOM
+}
 
 enum class BudgetPeriod {
     WEEKLY,
-    MONTHLY
+    MONTHLY,
+    CUSTOM
 }

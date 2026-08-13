@@ -1,29 +1,36 @@
 package com.example.smartpesa.util
 
 import java.text.NumberFormat
+import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.LocalTime
+import java.time.format.DateTimeFormatter
 import java.util.Locale
+import java.util.concurrent.atomic.AtomicReference
 
-/**
- * Currency formatter for SmartPesa
- * Always formats as "KES " prefix with zero decimal digits
- */
 object CurrencyFormatter {
-
+    private val currencyCode = AtomicReference("KES")
     private val formatter = NumberFormat.getInstance(Locale("en", "KE")).apply {
-        minimumFractionDigits = 0
-        maximumFractionDigits = 0
+        minimumFractionDigits = 2
+        maximumFractionDigits = 2
     }
 
-    /**
-     * Format amount as KES currency string
-     * @param amount The amount in KES (can be Double or Long)
-     * @return Formatted string like "KES 1,234"
-     */
-    fun format(amount: Double): String {
-        return "KES ${formatter.format(amount)}"
+    fun setCurrencyCode(code: String) {
+        currencyCode.set(code.trim().ifBlank { "KES" }.uppercase(Locale.ROOT))
     }
 
-    fun format(amount: Long): String {
-        return "KES ${formatter.format(amount)}"
+    fun format(amount: Double): String = "${currencyCode.get()} ${formatter.format(amount)}"
+    fun format(amount: Long): String = "${currencyCode.get()} ${formatter.format(amount)}"
+}
+
+object DateFormatFormatter {
+    private val pattern = AtomicReference("dd MMM yyyy")
+
+    fun setPattern(value: String) {
+        pattern.set(value.trim().ifBlank { "dd MMM yyyy" })
     }
+
+    fun formatDateTime(value: LocalDateTime): String = value.format(DateTimeFormatter.ofPattern(pattern.get() + ", HH:mm"))
+    fun formatDate(value: LocalDate): String = value.format(DateTimeFormatter.ofPattern(pattern.get()))
+    fun formatTime(value: LocalTime): String = value.format(DateTimeFormatter.ofPattern("HH:mm"))
 }

@@ -31,6 +31,9 @@ enum class TransactionType {
     /** Fuliza loan repayment */
     FULIZA_REPAYMENT,
 
+    /** Fuliza overdraft access/borrowing */
+    FULIZA_ACCESS,
+
     /** Unrecognized M-Pesa message format */
     UNKNOWN
 }

@@ -2,65 +2,68 @@ package com.example.smartpesa.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-// SmartPesa Brand Colors - Friendly & Approachable
-// Primary: Teal (trustworthy, calm, financial)
-// Secondary: Deep Orange (warm, energetic, friendly)
-// Tertiary: Purple (modern, special actions)
+val AppBackground = Color(0xFF0F1216)
+val AppSurface = Color(0xFF1B2027)
+val AppSurfaceAlt = Color(0xFF232A33)
+val AppSurfaceSoft = Color(0xFF20262E)
+val AppDivider = Color(0x14FFFFFF)
+val AppPrimaryText = Color(0xFFFFFFFF)
+val AppSecondaryText = Color(0xFF9AA3AD)
+val AppAccentIndigo = Color(0xFF7A7FF6)
+val AppDangerRed = Color(0xFFE35B68)
+val AppIncomeGreen = Color(0xFF7ED9A4)
+val AppExpenseRose = Color(0xFFF2B8C0)
 
-// Light Mode - Primary (Teal)
-val TealPrimary = Color(0xFF009688)
-val TealPrimaryContainer = Color(0xFFB2DFDB)
-val TealOnPrimary = Color(0xFFFFFFFF)
-val TealOnPrimaryContainer = Color(0xFF004D40)
+val LightBackground = Color(0xFFF5F7FB)
+val LightSurface = Color(0xFFFFFFFF)
+val LightSurfaceAlt = Color(0xFFF0F3F8)
+val LightSurfaceSoft = Color(0xFFE8EDF4)
+val LightDivider = Color(0x1A1B2027)
+val LightPrimaryText = Color(0xFF0F1216)
+val LightSecondaryText = Color(0xFF617085)
+val LightAccentIndigo = Color(0xFF5B68F6)
+val LightDangerRed = Color(0xFFCF4B5A)
+val LightIncomeGreen = Color(0xFF1E8C5A)
+val LightExpenseRose = Color(0xFFC96D7A)
 
-// Light Mode - Secondary (Deep Orange)
-val OrangeSecondary = Color(0xFFFF6F00)
-val OrangeSecondaryContainer = Color(0xFFFFE0B2)
-val OrangeOnSecondary = Color(0xFFFFFFFF)
-val OrangeOnSecondaryContainer = Color(0xFFE65100)
+val TealPrimary = AppAccentIndigo
+val TealPrimaryContainer = AppSurfaceAlt
+val TealOnPrimary = AppPrimaryText
+val TealOnPrimaryContainer = AppPrimaryText
+val OrangeSecondary = AppExpenseRose
+val OrangeSecondaryContainer = AppSurfaceAlt
+val OrangeOnSecondary = AppPrimaryText
+val OrangeOnSecondaryContainer = AppPrimaryText
+val PurpleTertiary = AppIncomeGreen
+val PurpleTertiaryContainer = AppSurfaceAlt
+val PurpleOnTertiary = AppPrimaryText
+val PurpleOnTertiaryContainer = AppPrimaryText
 
-// Light Mode - Tertiary (Purple)
-val PurpleTertiary = Color(0xFF7E57C2)
-val PurpleTertiaryContainer = Color(0xFFE1BEE7)
-val PurpleOnTertiary = Color(0xFFFFFFFF)
-val PurpleOnTertiaryContainer = Color(0xFF4A148C)
+val TealPrimaryDark = AppAccentIndigo
+val TealPrimaryContainerDark = AppSurfaceAlt
+val TealOnPrimaryDark = AppPrimaryText
+val TealOnPrimaryContainerDark = AppPrimaryText
+val OrangeSecondaryDark = AppExpenseRose
+val OrangeSecondaryContainerDark = AppSurfaceAlt
+val OrangeOnSecondaryDark = AppPrimaryText
+val OrangeOnSecondaryContainerDark = AppPrimaryText
+val PurpleTertiaryDark = AppIncomeGreen
+val PurpleTertiaryContainerDark = AppSurfaceAlt
+val PurpleOnTertiaryDark = AppPrimaryText
+val PurpleOnTertiaryContainerDark = AppPrimaryText
 
-// Dark Mode - Primary (Light Teal)
-val TealPrimaryDark = Color(0xFF4DB6AC)
-val TealPrimaryContainerDark = Color(0xFF00695C)
-val TealOnPrimaryDark = Color(0xFF1A1A1A)
-val TealOnPrimaryContainerDark = Color(0xFFB2DFDB)
+val IncomeGreen = AppIncomeGreen
+val ExpenseRed = AppDangerRed
+val FeeOrange = Color(0xFFFFB15E)
+val WarningAmber = Color(0xFFFFC857)
 
-// Dark Mode - Secondary (Light Orange)
-val OrangeSecondaryDark = Color(0xFFFFB74D)
-val OrangeSecondaryContainerDark = Color(0xFFE65100)
-val OrangeOnSecondaryDark = Color(0xFF1A1A1A)
-val OrangeOnSecondaryContainerDark = Color(0xFFFFE0B2)
-
-// Dark Mode - Tertiary (Light Purple)
-val PurpleTertiaryDark = Color(0xFFB39DDB)
-val PurpleTertiaryContainerDark = Color(0xFF5E35B1)
-val PurpleOnTertiaryDark = Color(0xFF1A1A1A)
-val PurpleOnTertiaryContainerDark = Color(0xFFE1BEE7)
-
-// Semantic colors (consistent across light/dark)
-val IncomeGreen = Color(0xFF4CAF50)
-val ExpenseRed = Color(0xFFF44336)
-val FeeOrange = Color(0xFFFF9800)
-val WarningAmber = Color(0xFFFFC107)
-
-// Background colors - Light Mode (warm tones for friendly feel)
-val BackgroundLight = Color(0xFFFFFBF5)  // Warm white
-val SurfaceLight = Color(0xFFFFFEF8)     // Cream white
-val SurfaceVariantLight = Color(0xFFF5F5F0)  // Light warm gray
-
-// Background colors - Dark Mode
-val BackgroundDark = Color(0xFF1A1A1A)   // Dark gray
-val SurfaceDark = Color(0xFF212121)      // Charcoal
-val SurfaceVariantDark = Color(0xFF2C2C2C)  // Lighter charcoal
-
-// Error colors
-val ErrorLight = Color(0xFFF44336)
-val ErrorDark = Color(0xFFEF5350)
-val OnErrorLight = Color(0xFFFFFFFF)
-val OnErrorDark = Color(0xFF1A1A1A)
+val BackgroundLight = LightBackground
+val SurfaceLight = LightSurface
+val SurfaceVariantLight = LightSurfaceAlt
+val BackgroundDark = AppBackground
+val SurfaceDark = AppSurface
+val SurfaceVariantDark = AppSurfaceAlt
+val ErrorLight = LightDangerRed
+val ErrorDark = AppDangerRed
+val OnErrorLight = LightPrimaryText
+val OnErrorDark = AppPrimaryText

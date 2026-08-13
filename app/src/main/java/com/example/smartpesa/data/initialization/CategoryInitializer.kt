@@ -1,6 +1,9 @@
 package com.example.smartpesa.data.initialization
 
 import com.example.smartpesa.data.local.entity.Category
+import com.example.smartpesa.data.local.entity.LOAN_GIVEN_CATEGORY
+import com.example.smartpesa.data.local.entity.LOAN_INTEREST_CATEGORY
+import com.example.smartpesa.data.local.entity.LOAN_RECEIVED_CATEGORY
 import com.example.smartpesa.data.local.entity.TransactionType
 import com.example.smartpesa.data.repository.CategoryRepository
 import kotlinx.coroutines.flow.first
@@ -25,6 +28,9 @@ class CategoryInitializer @Inject constructor(
 
         if (existingCategories.isEmpty()) {
             initializeCategories()
+        } else {
+            ensureLoanCategories()
+            ensureCommonSubCategories()
         }
     }
 
@@ -144,5 +150,42 @@ class CategoryInitializer @Inject constructor(
         categoryRepository.insertCategory(
             Category(name = "Other Income", type = TransactionType.INCOME, color = "#607D8B", icon = "MoreHoriz")
         )
+
+        // Loan categories
+        categoryRepository.insertCategory(
+            Category(name = LOAN_RECEIVED_CATEGORY, type = TransactionType.INCOME, color = "#1565C0", icon = "AccountBalanceWallet")
+        )
+        categoryRepository.insertCategory(
+            Category(name = LOAN_GIVEN_CATEGORY, type = TransactionType.EXPENSE, color = "#EF6C00", icon = "SwapHoriz")
+        )
+        categoryRepository.insertCategory(
+            Category(name = LOAN_INTEREST_CATEGORY, type = TransactionType.EXPENSE, color = "#6A1B9A", icon = "Savings")
+        )
+    }
+
+    private suspend fun ensureLoanCategories() {
+        insertLoanCategoryIfMissing(LOAN_RECEIVED_CATEGORY, TransactionType.INCOME, "#1565C0", "AccountBalanceWallet")
+        insertLoanCategoryIfMissing(LOAN_GIVEN_CATEGORY, TransactionType.EXPENSE, "#EF6C00", "SwapHoriz")
+        insertLoanCategoryIfMissing(LOAN_INTEREST_CATEGORY, TransactionType.EXPENSE, "#6A1B9A", "Savings")
+    }
+
+    private suspend fun insertLoanCategoryIfMissing(
+        name: String,
+        type: TransactionType,
+        color: String,
+        icon: String
+    ) {
+        if (categoryRepository.getCategoryByName(name).first() == null) {
+            categoryRepository.insertCategory(Category(name = name, type = type, color = color, icon = icon))
+        }
+    }
+
+    private suspend fun ensureCommonSubCategories() {
+        val billsId = categoryRepository.getCategoryByName("Bills & Utilities").first()?.id
+        listOf("Electricity (KPLC)" to "ElectricBolt", "Water" to "Water", "Internet" to "Wifi", "Airtime" to "Phone", "Rent" to "Home").forEach { (name, icon) ->
+            if (categoryRepository.getCategoryByName(name).first() == null) {
+                categoryRepository.insertCategory(Category(name = name, type = TransactionType.EXPENSE, color = "#FF9800", icon = icon, parentCategoryId = billsId))
+            }
+        }
     }
 }

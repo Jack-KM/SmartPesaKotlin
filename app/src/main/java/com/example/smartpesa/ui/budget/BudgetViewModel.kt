@@ -8,6 +8,7 @@ import com.example.smartpesa.data.local.entity.Category
 import com.example.smartpesa.data.repository.BudgetRepository
 import com.example.smartpesa.data.repository.TransactionRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import java.time.LocalDateTime
@@ -34,6 +35,9 @@ class BudgetViewModel @Inject constructor(
 
     private val _budgetAmount = MutableStateFlow("")
     val budgetAmount: StateFlow<String> = _budgetAmount.asStateFlow()
+
+    private val _validationError = MutableStateFlow<String?>(null)
+    val validationError: StateFlow<String?> = _validationError.asStateFlow()
 
     // All categories for budget selection
     val categories: StateFlow<List<Category>> = categoryRepository.getAllCategories()
@@ -177,6 +181,7 @@ class BudgetViewModel @Inject constructor(
         _selectedCategory.value = category
         _budgetAmount.value = ""
         _showAddBudgetDialog.value = true
+        _validationError.value = null
     }
 
     /**
@@ -186,6 +191,7 @@ class BudgetViewModel @Inject constructor(
         _showAddBudgetDialog.value = false
         _selectedCategory.value = null
         _budgetAmount.value = ""
+        _validationError.value = null
     }
 
     /**
@@ -209,14 +215,51 @@ class BudgetViewModel @Inject constructor(
         val category = _selectedCategory.value ?: return
         val amount = _budgetAmount.value.toDoubleOrNull() ?: return
 
-        if (amount <= 0) return
+        if (amount <= 0) {
+            _validationError.value = "Budget limit must be positive"
+            return
+        }
+
+        if (amount > 10_000_000.0) {
+            _validationError.value = "Budget limit is too high"
+            return
+        }
 
         viewModelScope.launch {
+            if (transactionRepository.countByCategoryName(category.name) == 0) {
+                _validationError.value = "Create transactions in ${category.name} before budgeting"
+                return@launch
+            }
+
+            val monthStart = YearMonth.now().atDay(1).atStartOfDay()
+            val monthEnd = YearMonth.now().atEndOfMonth().atTime(23, 59, 59)
+            val budgets = budgetRepository.getAllBudgets().first()
+            val overlaps = budgets.any { budget ->
+                budget.categoryId == category.id &&
+                    budget.period == BudgetPeriod.MONTHLY &&
+                    budget.startDate <= monthEnd &&
+                    (budget.endDate ?: monthEnd) >= monthStart
+            }
+
+            if (overlaps) {
+                _validationError.value = "Budget period overlaps existing budget"
+                return@launch
+            }
+
+            val spent = transactionRepository
+                .getTotalByCategoryAndDateRange(category.id, monthStart, monthEnd)
+                .first()
+                ?: 0.0
+
             val budget = Budget(
                 categoryId = category.id,
-                amount = amount,
+                limit = amount,
                 period = BudgetPeriod.MONTHLY,
-                startDate = YearMonth.now().atDay(1).atStartOfDay()
+                startDate = monthStart,
+                endDate = monthEnd,
+                spent = spent,
+                remaining = (amount - spent).coerceAtLeast(0.0),
+                category = category.name
             )
             budgetRepository.insertBudget(budget)
             hideAddBudgetDialog()

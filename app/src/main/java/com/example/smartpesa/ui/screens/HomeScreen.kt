@@ -7,6 +7,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.example.smartpesa.ui.components.CompactTopAppBar
 
 /**
  * Home screen - placeholder for dashboard/overview
@@ -17,12 +18,8 @@ import androidx.compose.ui.unit.dp
 fun HomeScreen() {
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text("SmartPesa") },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer,
-                    titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
-                )
+            CompactTopAppBar(
+                title = { Text("SmartPesa") }
             )
         }
     ) { innerPadding ->

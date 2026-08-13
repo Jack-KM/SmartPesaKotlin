@@ -8,6 +8,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Error
+import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -18,6 +19,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.example.smartpesa.ui.components.CompactTopAppBar
 import com.example.smartpesa.util.CurrencyFormatter
 import java.time.YearMonth
 import java.time.format.TextStyle
@@ -30,7 +32,9 @@ import java.util.*
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BudgetScreen(
-    viewModel: BudgetViewModel = hiltViewModel()
+    viewModel: BudgetViewModel = hiltViewModel(),
+    onMenuClick: () -> Unit = {},
+    onBudgetClick: (Long) -> Unit = {}
 ) {
     val budgetProgress by viewModel.budgetProgress.collectAsState()
     val budgetInsights by viewModel.budgetInsights.collectAsState()
@@ -38,14 +42,15 @@ fun BudgetScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
+            CompactTopAppBar(
                 title = {
                     Text("Budget - ${getCurrentMonthName()}")
                 },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer,
-                    titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
-                )
+                navigationIcon = {
+                    IconButton(onClick = onMenuClick) {
+                        Icon(Icons.Default.Menu, contentDescription = "Open menu")
+                    }
+                }
             )
         },
         floatingActionButton = {
@@ -86,7 +91,7 @@ fun BudgetScreen(
                         }
 
                         items(budgetProgress) { progress ->
-                            BudgetProgressCard(progress = progress)
+                            BudgetProgressCard(progress = progress, onClick = { onBudgetClick(progress.budgetId) })
                         }
 
                         // Insights section
@@ -123,9 +128,10 @@ fun BudgetScreen(
  * Budget progress card showing category, spent/budgeted amounts, and progress bar
  */
 @Composable
-private fun BudgetProgressCard(progress: BudgetProgress) {
+private fun BudgetProgressCard(progress: BudgetProgress, onClick: () -> Unit = {}) {
     Card(
         modifier = Modifier.fillMaxWidth(),
+        onClick = onClick,
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceVariant
         )

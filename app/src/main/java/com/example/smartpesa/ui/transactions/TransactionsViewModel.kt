@@ -1,5 +1,6 @@
 package com.example.smartpesa.ui.transactions
 
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.smartpesa.data.local.entity.Transaction
@@ -17,6 +18,7 @@ import javax.inject.Inject
  */
 @HiltViewModel
 class TransactionsViewModel @Inject constructor(
+    savedStateHandle: SavedStateHandle,
     private val transactionRepository: TransactionRepository
 ) : ViewModel() {
 
@@ -28,9 +30,19 @@ class TransactionsViewModel @Inject constructor(
     private val _selectedFilter = MutableStateFlow(TransactionFilter.ALL)
     val selectedFilter: StateFlow<TransactionFilter> = _selectedFilter.asStateFlow()
 
+    private val accountFilter: StateFlow<String?> = savedStateHandle.getStateFlow("account", "")
+        .map { it.trim().takeIf(String::isNotBlank) }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.Eagerly,
+            initialValue = savedStateHandle.get<String>("account")?.trim()?.takeIf(String::isNotBlank)
+        )
+
+    val selectedAccount: StateFlow<String?> = accountFilter
+
     // Base transaction list from Room (all transactions, newest first)
     private val allTransactions: Flow<List<Transaction>> =
-        transactionRepository.getAllTransactions()
+        transactionRepository.getPersonalTransactions()
 
     /**
      * Filtered and searched transactions
@@ -41,9 +53,16 @@ class TransactionsViewModel @Inject constructor(
         combine(
             allTransactions,
             searchQuery,
-            selectedFilter
-        ) { transactions, query, filter ->
+            selectedFilter,
+            accountFilter
+        ) { transactions, query, filter, account ->
             var filtered = transactions
+
+            if (!account.isNullOrBlank()) {
+                filtered = filtered.filter { transaction ->
+                    transaction.matchesAccount(account)
+                }
+            }
 
             // Apply type filter
             if (filter != TransactionFilter.ALL) {
@@ -98,5 +117,20 @@ class TransactionsViewModel @Inject constructor(
     fun clearFilters() {
         _searchQuery.value = ""
         _selectedFilter.value = TransactionFilter.ALL
+    }
+
+    suspend fun deleteTransaction(transaction: Transaction) {
+        transactionRepository.deleteTransaction(transaction)
+    }
+
+    private fun Transaction.matchesAccount(account: String): Boolean {
+        val counterpartyText = counterparty.trim()
+        if (counterpartyText.isBlank()) return false
+
+        val parts = counterpartyText.split("→", limit = 2).map { it.trim() }
+        return when {
+            parts.size == 2 -> parts.any { it.equals(account, ignoreCase = true) }
+            else -> counterpartyText.equals(account, ignoreCase = true) || counterpartyText.contains(account, ignoreCase = true)
+        }
     }
 }

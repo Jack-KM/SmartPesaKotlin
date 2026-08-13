@@ -28,6 +28,15 @@ interface BudgetDao {
     @Query("SELECT * FROM budgets WHERE categoryId = :categoryId ORDER BY startDate DESC")
     fun getByCategory(categoryId: Long): Flow<List<Budget>>
 
+    @Query("SELECT COUNT(*) FROM budgets WHERE accountName = :accountName")
+    suspend fun countByAccountName(accountName: String): Int
+
+    @Query("UPDATE budgets SET accountName = :newName WHERE accountName = :oldName")
+    suspend fun reassignAccountName(oldName: String, newName: String)
+
+    @Query("DELETE FROM budgets WHERE accountName = :accountName")
+    suspend fun deleteByAccountName(accountName: String)
+
     @Query("DELETE FROM budgets")
     suspend fun deleteAll()
 }
