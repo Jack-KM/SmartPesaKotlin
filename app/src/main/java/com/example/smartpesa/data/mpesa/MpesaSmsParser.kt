@@ -45,20 +45,22 @@ class MpesaSmsParser @Inject constructor() {
             "Transaction cost,?\\s+(?:Ksh|KES)\\.?\\s*([0-9,]+\\.?[0-9]*)",
             Pattern.CASE_INSENSITIVE
         )
+        private const val PHONE_CAPTURE = "\\d{4}(?:\\d{6}|\\*{3}\\d{3})"
+        private val PHONE_AT_END_PATTERN = Pattern.compile("($PHONE_CAPTURE)$")
 
         // Transaction-type specific patterns
 
         // SEND: "Ksh50.00 sent to TORY RUKWARO 0758625343"
         // Handles both full and masked phone numbers (0758***343)
         private val SEND_PATTERN = Pattern.compile(
-            "sent to\\s+([A-Z\\s]+?)(?:\\s+|,\\s*)(\\d{4}\\*?\\*?\\*?\\d{3})?",
+            "sent to\\s+(.+?)(?:,?\\s+($PHONE_CAPTURE))?\\s+(?:on|via|for account|New M-PESA)",
             Pattern.CASE_INSENSITIVE
         )
 
         // RECEIVE: "You have received Ksh2,000.00 from BRIAN MBOGO"
         // May include phone number: "from hermela abebe 0725***211"
         private val RECEIVE_PATTERN = Pattern.compile(
-            "You have received.*?from\\s+([A-Z\\s]+?)(?:\\s+(\\d{4}\\*?\\*?\\*?\\d{3}))?(?:\\s+on)",
+            "You have received.*?from\\s+(.+?)(?:\\s+($PHONE_CAPTURE))?\\s+on",
             Pattern.CASE_INSENSITIVE
         )
 
@@ -243,8 +245,10 @@ class MpesaSmsParser @Inject constructor() {
 
     private fun parseSend(smsBody: String, code: String, timestamp: Long): ParsedTransaction {
         val matcher = SEND_PATTERN.matcher(smsBody)
-        val name = if (matcher.find()) matcher.group(1)?.trim() else null
-        val phone = if (matcher.group(2) != null) matcher.group(2)?.trim() else null
+        val rawName = if (matcher.find()) matcher.group(1)?.trim() else null
+        val phone = matcher.takeIf { rawName != null }?.group(2)?.trim()
+            ?: rawName?.let { PHONE_AT_END_PATTERN.matcher(it).takeIf { match -> match.find() }?.group(1)?.trim() }
+        val name = rawName?.replace(Regex("""\s*,?\s*\d{4}(?:\d{6}|\*{3}\d{3})$"""), "")?.trim()
 
         return ParsedTransaction(
             type = TransactionType.SEND,

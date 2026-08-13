@@ -20,13 +20,13 @@ class MerchantNormalizer @Inject constructor() {
 
     companion object {
         // Patterns to remove during normalization
-        private val MPESA_CODE_PATTERN = Regex("""[A-Z0-9]{10}""")
+        private val MPESA_CODE_PATTERN = Regex("""\b(?=[A-Z0-9]*\d)[A-Z0-9]{10}\b""")
         private val PHONE_PATTERN = Regex("""\b\d{4}\*?\*?\*?\d{3}\b""")
         private val PHONE_FULL_PATTERN = Regex("""\b\d{10,12}\b""")
         private val PAYBILL_PATTERN = Regex("""(?i)MPESA PAYBILL \d+""")
         private val TILL_PATTERN = Regex("""(?i)MPESA TILL \d+""")
         private val BUSINESS_SUFFIXES = listOf(
-            "LIMITED", "LTD", "INC", "INCORPORATED", "LLC", "PLC", "CO",
+            "LIMITED", "LTD", "INC", "INCORPORATED", "LLC", "PLC",
             "COMPANY", "CORP", "CORPORATION"
         )
         private val PUNCTUATION = Regex("""[.,;:\-_/\\]+""")

@@ -50,7 +50,7 @@ class CategoryRuleEngineTest {
         val result = ruleEngine.findMatchingRule(transaction)
 
         assertNotNull(result)
-        assertEquals(100, result?.categoryId)
+        assertEquals(100L, result?.categoryId)
     }
 
     @Test
@@ -68,7 +68,7 @@ class CategoryRuleEngineTest {
         val result = ruleEngine.findMatchingRule(transaction)
 
         assertNotNull(result)
-        assertEquals(100, result?.categoryId)
+        assertEquals(100L, result?.categoryId)
     }
 
     @Test
@@ -89,7 +89,7 @@ class CategoryRuleEngineTest {
         val result = ruleEngine.findMatchingRule(transaction)
 
         assertNotNull(result)
-        assertEquals(100, result?.categoryId)
+        assertEquals(100L, result?.categoryId)
     }
 
     @Test
@@ -107,7 +107,7 @@ class CategoryRuleEngineTest {
         val result = ruleEngine.findMatchingRule(transaction)
 
         assertNotNull(result)
-        assertEquals(100, result?.categoryId)
+        assertEquals(100L, result?.categoryId)
     }
 
     @Test
@@ -125,7 +125,7 @@ class CategoryRuleEngineTest {
         val result = ruleEngine.findMatchingRule(transaction)
 
         assertNotNull(result)
-        assertEquals(100, result?.categoryId)
+        assertEquals(100L, result?.categoryId)
     }
 
     @Test
@@ -160,7 +160,7 @@ class CategoryRuleEngineTest {
         val result = ruleEngine.findMatchingRule(transaction)
 
         assertNotNull(result)
-        assertEquals(100, result?.categoryId)
+        assertEquals(100L, result?.categoryId)
     }
 
     @Test
@@ -182,7 +182,7 @@ class CategoryRuleEngineTest {
         val result = ruleEngine.findMatchingRule(transaction)
 
         assertNotNull(result)
-        assertEquals(100, result?.categoryId)
+        assertEquals(100L, result?.categoryId)
     }
 
     @Test
@@ -228,7 +228,7 @@ class CategoryRuleEngineTest {
         val result = ruleEngine.findMatchingRule(transaction)
 
         assertNotNull(result)
-        assertEquals(100, result?.categoryId)  // Should match rule1 (higher priority)
+        assertEquals(100L, result?.categoryId)  // Should match rule1 (higher priority)
     }
 
     @Test
@@ -253,7 +253,7 @@ class CategoryRuleEngineTest {
         val result = ruleEngine.findMatchingRule(transaction)
 
         assertNotNull(result)
-        assertEquals(200, result?.categoryId)  // Should match rule2 (rule1 is disabled)
+        assertEquals(200L, result?.categoryId)  // Should match rule2 (rule1 is disabled)
     }
 
     @Test
@@ -271,7 +271,7 @@ class CategoryRuleEngineTest {
         val result = ruleEngine.findMatchingRule(transaction)
 
         assertNotNull(result)
-        assertEquals(100, result?.categoryId)
+        assertEquals(100L, result?.categoryId)
     }
 
     @Test
@@ -292,7 +292,7 @@ class CategoryRuleEngineTest {
         val result = ruleEngine.findMatchingRule(transaction)
 
         assertNotNull(result)
-        assertEquals(100, result?.categoryId)
+        assertEquals(100L, result?.categoryId)
     }
 
     private fun createTestTransaction(

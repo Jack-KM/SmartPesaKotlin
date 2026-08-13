@@ -52,7 +52,8 @@ class PayeeKeyDeriver @Inject constructor(
         }
 
         return merchantNormalizer.extractMerchantName(transaction.description)
-            ?: transaction.description.lineSequence().firstOrNull()?.trim()?.takeIf { it.isNotBlank() }
+            ?: transaction.description.lineSequence().firstOrNull()?.trim()
+                ?.takeIf { transaction.source.contains("M-Pesa", ignoreCase = true) && it.isNotBlank() }
     }
 
     private fun isAccountName(value: String): Boolean {
