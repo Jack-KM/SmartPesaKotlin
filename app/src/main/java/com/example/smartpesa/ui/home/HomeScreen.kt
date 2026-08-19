@@ -1,31 +1,40 @@
 package com.example.smartpesa.ui.home
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Inbox
+import androidx.compose.material.icons.filled.TrendingDown
+import androidx.compose.material.icons.filled.TrendingUp
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.example.smartpesa.ui.theme.ExpenseRed
+import com.example.smartpesa.ui.theme.IncomeGreen
 import com.example.smartpesa.util.CurrencyFormatter
 
 /**
- * Home screen showing monthly overview and recent transactions
- * Backed by real Room data via HomeViewModel
+ * Home screen showing monthly overview and recent transactions.
+ * Backed by real Room data via HomeViewModel.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
     viewModel: HomeViewModel = hiltViewModel(),
-    onNavigateToPermissions: () -> Unit = {}
+    onNavigateToPermissions: () -> Unit = {},
+    onNavigateToTransactions: () -> Unit = {}
 ) {
     val isLoading by viewModel.isLoading.collectAsState()
     val monthlyOverview by viewModel.monthlyOverview.collectAsState()
@@ -73,25 +82,39 @@ fun HomeScreen(
                         .fillMaxSize()
                         .padding(paddingValues),
                     contentPadding = PaddingValues(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     // Monthly overview card
                     item {
-                        MonthlyOverviewCard(overview = monthlyOverview)
+                        MonthlyOverviewCard(
+                            overview = monthlyOverview,
+                            monthName = monthName
+                        )
                     }
 
                     // Section header
                     item {
-                        Text(
-                            text = "Recent Transactions",
-                            style = MaterialTheme.typography.titleMedium,
-                            color = MaterialTheme.colorScheme.onSurface,
-                            modifier = Modifier.padding(vertical = 8.dp)
-                        )
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 8.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "Recent Transactions",
+                                style = MaterialTheme.typography.titleMedium,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+
+                            TextButton(onClick = onNavigateToTransactions) {
+                                Text("See all")
+                            }
+                        }
                     }
 
                     // Transaction list
-                    items(recentTransactions) { transaction ->
+                    items(recentTransactions, key = { it.id }) { transaction ->
                         TransactionListItem(transaction = transaction)
                     }
                 }
@@ -101,98 +124,147 @@ fun HomeScreen(
 }
 
 /**
- * Monthly overview summary card
- * Shows spent, received, net with color coding
+ * Monthly overview summary card.
+ * Shows the net balance as the hero figure with income/expenses broken out.
  */
 @Composable
-private fun MonthlyOverviewCard(overview: MonthlyOverview) {
+private fun MonthlyOverviewCard(
+    overview: MonthlyOverview,
+    monthName: String
+) {
+    val netColor = if (overview.net >= 0) IncomeGreen else ExpenseRed
+
     Card(
         modifier = Modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.large,
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.primaryContainer
-        )
+            containerColor = MaterialTheme.colorScheme.surface
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
+                .padding(20.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
+            // Header: label + month chip
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "Net balance",
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+
+                Surface(
+                    shape = MaterialTheme.shapes.small,
+                    color = MaterialTheme.colorScheme.primaryContainer
+                ) {
+                    Text(
+                        text = monthName,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer,
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+                    )
+                }
+            }
+
             Text(
-                text = "Monthly Overview",
-                style = MaterialTheme.typography.titleLarge,
-                color = MaterialTheme.colorScheme.onPrimaryContainer
+                text = "${if (overview.net >= 0) "+" else "-"}${CurrencyFormatter.format(kotlin.math.abs(overview.net))}",
+                style = MaterialTheme.typography.headlineMedium,
+                fontWeight = FontWeight.Bold,
+                color = netColor
             )
 
-            // Spent
+            // Income / expenses breakdown
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    text = "Spent",
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                StatColumn(
+                    label = "Income",
+                    icon = Icons.Default.TrendingUp,
+                    value = CurrencyFormatter.format(overview.totalReceived),
+                    color = IncomeGreen,
+                    modifier = Modifier.weight(1f)
                 )
-                Text(
-                    text = CurrencyFormatter.format(overview.totalSpent),
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.error
+
+                Box(
+                    modifier = Modifier
+                        .width(1.dp)
+                        .height(40.dp)
+                        .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f))
+                )
+
+                StatColumn(
+                    label = "Expenses",
+                    icon = Icons.Default.TrendingDown,
+                    value = CurrencyFormatter.format(overview.totalSpent),
+                    color = ExpenseRed,
+                    modifier = Modifier.weight(1f),
+                    alignEnd = true
                 )
             }
 
-            // Received
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Text(
-                    text = "Received",
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer
-                )
-                Text(
-                    text = CurrencyFormatter.format(overview.totalReceived),
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.tertiary
-                )
-            }
+            Divider(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f))
 
-            Divider(color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.2f))
-
-            // Net
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Text(
-                    text = "Net",
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer
-                )
-                Text(
-                    text = CurrencyFormatter.format(overview.net),
-                    style = MaterialTheme.typography.titleLarge,
-                    color = if (overview.net >= 0)
-                        MaterialTheme.colorScheme.tertiary
-                    else
-                        MaterialTheme.colorScheme.error
-                )
-            }
-
-            // Transaction count
             Text(
                 text = "${overview.transactionCount} transactions this month",
                 style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
     }
 }
 
 /**
- * Empty state when no transactions exist
- * Explains user needs to enable a capture mode
+ * A single labelled stat in the monthly overview breakdown.
+ */
+@Composable
+private fun StatColumn(
+    label: String,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    value: String,
+    color: androidx.compose.ui.graphics.Color,
+    modifier: Modifier = Modifier,
+    alignEnd: Boolean = false
+) {
+    Column(
+        modifier = modifier,
+        horizontalAlignment = if (alignEnd) Alignment.End else Alignment.Start,
+        verticalArrangement = Arrangement.spacedBy(4.dp)
+    ) {
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = color,
+                modifier = Modifier.size(14.dp)
+            )
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+
+        Text(
+            text = value,
+            style = MaterialTheme.typography.titleMedium,
+            color = color
+        )
+    }
+}
+
+/**
+ * Empty state when no transactions exist.
  */
 @Composable
 private fun EmptyState(
@@ -204,12 +276,20 @@ private fun EmptyState(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        Icon(
-            imageVector = Icons.Default.Inbox,
-            contentDescription = null,
-            modifier = Modifier.size(80.dp),
-            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
-        )
+        Box(
+            modifier = Modifier
+                .size(96.dp)
+                .clip(CircleShape)
+                .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = Icons.Default.Inbox,
+                contentDescription = null,
+                modifier = Modifier.size(44.dp),
+                tint = MaterialTheme.colorScheme.primary
+            )
+        }
 
         Spacer(modifier = Modifier.height(24.dp))
 
@@ -220,7 +300,7 @@ private fun EmptyState(
             color = MaterialTheme.colorScheme.onSurface
         )
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(8.dp))
 
         Text(
             text = "SmartPesa will automatically track your M-Pesa transactions once you enable SMS access or manually paste transactions.",
@@ -241,7 +321,7 @@ private fun EmptyState(
                 modifier = Modifier.size(20.dp)
             )
             Spacer(modifier = Modifier.width(8.dp))
-            Text("Enable SMS Access")
+            Text("Set up capture")
         }
 
         Spacer(modifier = Modifier.height(8.dp))

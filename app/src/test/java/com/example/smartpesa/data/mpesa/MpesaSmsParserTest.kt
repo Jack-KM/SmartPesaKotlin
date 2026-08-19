@@ -265,4 +265,41 @@ class MpesaSmsParserTest {
         assertEquals("UGAQXB485T", result?.mpesaCode)
         assertEquals(1218.98, result?.balance, 0.01)
     }
+
+    // Notification parsing tests
+
+    @Test
+    fun `parseNotification flattens multi-line notification text`() {
+        val notification = "UG9QXAXODW Confirmed.\nKsh50.00 sent to TORY RUKWARO 0758625343\nNew M-PESA balance is Ksh0.00."
+
+        val result = parser.parseNotification(notification, timestamp)
+
+        assertNotNull(result)
+        assertEquals(TransactionType.SEND, result?.type)
+        assertEquals(50.0, result?.amount, 0.01)
+        assertEquals("TORY RUKWARO", result?.counterpartyName)
+        assertEquals("UG9QXAXODW", result?.mpesaCode)
+    }
+
+    @Test
+    fun `parseNotification falls back to loose code when Confirmed is absent`() {
+        val notification = "UG9QXAXODW You have received Ksh2,000.00 from BRIAN MBOGO on 10/7/26 at 11:08 PM New M-PESA balance is Ksh2,000.00."
+
+        val result = parser.parseNotification(notification, timestamp)
+
+        assertNotNull(result)
+        assertEquals(TransactionType.RECEIVE, result?.type)
+        assertEquals(2000.0, result?.amount, 0.01)
+        assertEquals("BRIAN MBOGO", result?.counterpartyName)
+        assertEquals("UG9QXAXODW", result?.mpesaCode)
+    }
+
+    @Test
+    fun `parseNotification returns null without Confirmed and without code`() {
+        val notification = "You have received Ksh2,000.00 from BRIAN MBOGO. New M-PESA balance is Ksh2,000.00."
+
+        val result = parser.parseNotification(notification, timestamp)
+
+        assertNull(result)
+    }
 }

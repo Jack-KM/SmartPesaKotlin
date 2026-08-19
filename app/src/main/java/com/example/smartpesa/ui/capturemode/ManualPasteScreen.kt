@@ -5,7 +5,9 @@ import android.content.Context
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.ContentPaste
+import androidx.compose.material.icons.filled.Error
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -120,12 +122,22 @@ fun ManualPasteScreen(
                         containerColor = MaterialTheme.colorScheme.tertiaryContainer
                     )
                 ) {
-                    Text(
-                        text = "✓ Transaction saved successfully! Check the Home screen.",
+                    Row(
                         modifier = Modifier.padding(16.dp),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onTertiaryContainer
-                    )
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.CheckCircle,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onTertiaryContainer
+                        )
+                        Text(
+                            text = "Transaction saved successfully! Check the Home screen.",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onTertiaryContainer
+                        )
+                    }
                 }
             }
 
@@ -136,12 +148,22 @@ fun ManualPasteScreen(
                         containerColor = MaterialTheme.colorScheme.errorContainer
                     )
                 ) {
-                    Text(
-                        text = errorMessage,
+                    Row(
                         modifier = Modifier.padding(16.dp),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onErrorContainer
-                    )
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Error,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onErrorContainer
+                        )
+                        Text(
+                            text = errorMessage,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onErrorContainer
+                        )
+                    }
                 }
             }
 

@@ -3,7 +3,9 @@ package com.example.smartpesa.ui.theme
 import android.app.Activity
 import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Shapes
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
@@ -13,7 +15,17 @@ import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.unit.dp
 import androidx.core.view.WindowCompat
+
+// Soft, modern corner radii used across the app.
+private val AppShapes = Shapes(
+    extraSmall = RoundedCornerShape(8.dp),
+    small = RoundedCornerShape(12.dp),
+    medium = RoundedCornerShape(16.dp),
+    large = RoundedCornerShape(20.dp),
+    extraLarge = RoundedCornerShape(28.dp)
+)
 
 private val DarkColorScheme = darkColorScheme(
     primary = TealPrimaryDark,
@@ -75,13 +87,16 @@ fun SmartPesaTheme(
     if (!view.isInEditMode) {
         SideEffect {
             val window = (view.context as Activity).window
-            window.statusBarColor = colorScheme.primary.toArgb()
+            // Blend the status bar with the top app bar (both use primaryContainer)
+            // so the edge-to-edge layout looks seamless.
+            window.statusBarColor = colorScheme.primaryContainer.toArgb()
             WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = darkTheme
         }
     }
 
     MaterialTheme(
         colorScheme = colorScheme,
+        shapes = AppShapes,
         typography = Typography,
         content = content
     )

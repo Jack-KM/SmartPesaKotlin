@@ -25,39 +25,48 @@ import com.example.smartpesa.ui.capturemode.ManualPasteScreen
 import com.example.smartpesa.ui.permissions.SmsPermissionScreen
 
 /**
- * Main navigation graph for SmartPesa
- * Includes bottom navigation bar and screen navigation
+ * Main navigation graph for SmartPesa.
+ * Includes bottom navigation bar and screen navigation.
  */
 @Composable
 fun NavGraph() {
     val navController = rememberNavController()
+    val navBackStackEntry by navController.currentBackStackEntryAsState()
+    val currentDestination = navBackStackEntry?.destination
+
+    // Only show the bottom bar on the four main tabs, not on sub-screens
+    // (capture mode, permission, manual paste).
+    val showBottomBar = currentDestination?.hierarchy?.any { destination ->
+        bottomNavItems.any { it.screen.route == destination.route }
+    } == true
 
     Scaffold(
         bottomBar = {
-            NavigationBar {
-                val navBackStackEntry by navController.currentBackStackEntryAsState()
-                val currentDestination = navBackStackEntry?.destination
-
-                bottomNavItems.forEach { item ->
-                    NavigationBarItem(
-                        icon = { Icon(item.icon, contentDescription = item.label) },
-                        label = { Text(item.label) },
-                        selected = currentDestination?.hierarchy?.any { it.route == item.screen.route } == true,
-                        onClick = {
-                            navController.navigate(item.screen.route) {
-                                // Pop up to the start destination of the graph to
-                                // avoid building up a large stack of destinations
-                                popUpTo(navController.graph.findStartDestination().id) {
-                                    saveState = true
+            if (showBottomBar) {
+                NavigationBar {
+                    bottomNavItems.forEach { item ->
+                        NavigationBarItem(
+                            icon = { Icon(item.icon, contentDescription = item.label) },
+                            label = { Text(item.label) },
+                            selected = currentDestination?.hierarchy?.any {
+                                it.route == item.screen.route
+                            } == true,
+                            onClick = {
+                                navController.navigate(item.screen.route) {
+                                    // Pop up to the start destination of the graph to
+                                    // avoid building up a large stack of destinations
+                                    popUpTo(navController.graph.findStartDestination().id) {
+                                        saveState = true
+                                    }
+                                    // Avoid multiple copies of the same destination when
+                                    // reselecting the same item
+                                    launchSingleTop = true
+                                    // Restore state when reselecting a previously selected item
+                                    restoreState = true
                                 }
-                                // Avoid multiple copies of the same destination when
-                                // reselecting the same item
-                                launchSingleTop = true
-                                // Restore state when reselecting a previously selected item
-                                restoreState = true
                             }
-                        }
-                    )
+                        )
+                    }
                 }
             }
         }
@@ -71,6 +80,15 @@ fun NavGraph() {
                 HomeScreen(
                     onNavigateToPermissions = {
                         navController.navigate(Screen.CaptureMode.route)
+                    },
+                    onNavigateToTransactions = {
+                        navController.navigate(Screen.Transactions.route) {
+                            popUpTo(navController.graph.findStartDestination().id) {
+                                saveState = true
+                            }
+                            launchSingleTop = true
+                            restoreState = true
+                        }
                     }
                 )
             }

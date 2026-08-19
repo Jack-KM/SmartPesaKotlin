@@ -92,6 +92,14 @@ class MpesaSmsParser @Inject constructor() {
             "from your M-PESA has been used to.*?pay.*?Fuliza",
             Pattern.CASE_INSENSITIVE
         )
+
+        // Loose M-Pesa code matcher for notifications that omit the word "Confirmed".
+        // M-Pesa codes are 10-character alphanumeric tokens that always mix letters and digits
+        // (e.g. "UG9QXAXODW"). Requiring at least one letter and one digit avoids matching
+        // plain account/phone numbers.
+        private val LOOSE_CODE_PATTERN = Pattern.compile(
+            "\\b(?=[A-Z0-9]*[A-Z])(?=[A-Z0-9]*[0-9])[A-Z0-9]{10}\\b"
+        )
     }
 
     /**
@@ -147,6 +155,78 @@ class MpesaSmsParser @Inject constructor() {
                 )
             }
         }
+    }
+
+    /**
+     * Parse M-Pesa text captured from a notification.
+     *
+     * Notification text differs from raw SMS in two important ways:
+     * 1. It is frequently split across multiple lines (or multiple EXTRA_TEXT_LINES),
+     *    so it must be flattened before the SMS-style parser can understand it.
+     * 2. Some M-Pesa notifications omit the word "Confirmed", so a looser fallback
+     *    is used when the strict SMS parser cannot handle the text.
+     *
+     * @param notificationText The flattened notification body
+     * @param timestamp Notification post time in milliseconds
+     * @return ParsedTransaction if successful, null otherwise
+     */
+    fun parseNotification(notificationText: String, timestamp: Long): ParsedTransaction? {
+        if (notificationText.isBlank()) return null
+
+        // Flatten multi-line notification text into a single line and collapse whitespace.
+        val normalized = notificationText
+            .replace(Regex("[\\r\\n]+"), " ")
+            .replace(Regex("\\s+"), " ")
+            .trim()
+
+        // First try the strict SMS parser (handles the common "code Confirmed." format).
+        parse(normalized, timestamp)?.let { return it }
+
+        // Fallback for notifications without "Confirmed".
+        if (!hasMpesaMarkers(normalized)) return null
+
+        val code = extractCodeLoose(normalized) ?: return null
+
+        return when {
+            FULIZA_REPAYMENT_PATTERN.matcher(normalized).find() -> parseFulizaRepayment(normalized, code, timestamp)
+            WITHDRAWAL_PATTERN.matcher(normalized).find() -> parseWithdrawal(normalized, code, timestamp)
+            DEPOSIT_PATTERN.matcher(normalized).find() -> parseDeposit(normalized, code, timestamp)
+            AIRTIME_PATTERN.matcher(normalized).find() -> parseAirtime(normalized, code, timestamp)
+            TOKEN_PATTERN.matcher(normalized).find() -> parseTokenPurchase(normalized, code, timestamp)
+            RECEIVE_PATTERN.matcher(normalized).find() -> parseReceive(normalized, code, timestamp)
+            SEND_PATTERN.matcher(normalized).find() && !normalized.contains("for account", ignoreCase = true) -> {
+                parseSend(normalized, code, timestamp)
+            }
+            PAYBILL_PATTERN.matcher(normalized).find() -> parsePaybill(normalized, code, timestamp)
+            else -> ParsedTransaction(
+                type = TransactionType.UNKNOWN,
+                amount = extractAmount(normalized) ?: 0.0,
+                feeAmount = extractFee(normalized),
+                mpesaCode = code,
+                balance = extractBalance(normalized),
+                rawSmsBody = normalized,
+                timestamp = timestamp
+            )
+        }
+    }
+
+    /**
+     * Cheap check that text is M-Pesa-like even without the word "Confirmed".
+     * Used only by the notification fallback path.
+     */
+    private fun hasMpesaMarkers(text: String): Boolean {
+        val lower = text.lowercase()
+        return (lower.contains("mpesa") || lower.contains("m-pesa")) &&
+            (lower.contains("ksh") || lower.contains("kes")) &&
+            AMOUNT_PATTERN.matcher(text).find()
+    }
+
+    /**
+     * Extract an M-Pesa code without requiring the word "Confirmed".
+     */
+    private fun extractCodeLoose(smsBody: String): String? {
+        val matcher = LOOSE_CODE_PATTERN.matcher(smsBody)
+        return if (matcher.find()) matcher.group() else null
     }
 
     private fun parseSend(smsBody: String, code: String, timestamp: Long): ParsedTransaction {

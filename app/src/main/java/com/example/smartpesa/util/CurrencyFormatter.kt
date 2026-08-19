@@ -5,13 +5,14 @@ import java.util.Locale
 
 /**
  * Currency formatter for SmartPesa
- * Always formats as "KES " prefix with zero decimal digits
+ * Always formats as "KES " prefix, showing decimals only when present
+ * (e.g. "KES 1,234" or "KES 1,095.06").
  */
 object CurrencyFormatter {
 
     private val formatter = NumberFormat.getInstance(Locale("en", "KE")).apply {
         minimumFractionDigits = 0
-        maximumFractionDigits = 0
+        maximumFractionDigits = 2
     }
 
     /**

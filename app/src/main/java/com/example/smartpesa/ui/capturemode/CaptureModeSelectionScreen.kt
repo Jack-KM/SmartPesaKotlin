@@ -7,8 +7,10 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.example.smartpesa.util.NotificationListenerUtil
 
 /**
  * Capture mode selection screen
@@ -21,6 +23,8 @@ fun CaptureModeSelectionScreen(
     onManualPasteSelected: () -> Unit,
     onBackPressed: () -> Unit
 ) {
+    val context = LocalContext.current
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -61,13 +65,15 @@ fun CaptureModeSelectionScreen(
                 onClick = onSmsAutoSelected
             )
 
-            // Notification Listener option (coming soon)
+            // Notification Listener option
             CaptureModeCard(
                 title = "Notification Listener",
-                description = "Read M-Pesa notifications. Alternative to SMS access. Coming soon.",
+                description = "Read M-Pesa notifications from the M-PESA app. No SMS permission needed.",
                 icon = Icons.Default.Notifications,
-                enabled = false,
-                onClick = { /* Coming soon */ }
+                enabled = true,
+                onClick = {
+                    NotificationListenerUtil.openNotificationListenerSettings(context)
+                }
             )
 
             // Manual Paste option

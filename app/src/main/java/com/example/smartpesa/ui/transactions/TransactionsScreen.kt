@@ -6,6 +6,7 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.ReceiptLong
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -87,6 +88,16 @@ fun TransactionsScreen(
                 }
 
                 else -> {
+                    Text(
+                        text = if (filteredTransactions.size == 1)
+                            "1 transaction"
+                        else
+                            "${filteredTransactions.size} transactions",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(horizontal = 16.dp)
+                    )
+
                     TransactionList(
                         transactions = filteredTransactions,
                         modifier = Modifier.fillMaxSize()
@@ -123,6 +134,7 @@ private fun SearchBar(
             }
         },
         singleLine = true,
+        shape = MaterialTheme.shapes.extraLarge,
         colors = OutlinedTextFieldDefaults.colors()
     )
 }
@@ -223,6 +235,15 @@ private fun EmptyResultsState(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
+        Icon(
+            imageVector = if (hasActiveFilters) Icons.Default.Search else Icons.Default.ReceiptLong,
+            contentDescription = null,
+            modifier = Modifier.size(56.dp),
+            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
         Text(
             text = if (hasActiveFilters) "No Matching Transactions" else "No Transactions",
             style = MaterialTheme.typography.headlineSmall,

@@ -3,21 +3,27 @@ package com.example.smartpesa.ui.budget
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Error
+import androidx.compose.material.icons.filled.AccountBalanceWallet
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.example.smartpesa.ui.theme.ExpenseRed
+import com.example.smartpesa.ui.theme.IncomeGreen
+import com.example.smartpesa.ui.theme.WarningAmber
 import com.example.smartpesa.util.CurrencyFormatter
 import java.time.YearMonth
 import java.time.format.TextStyle
@@ -126,17 +132,19 @@ fun BudgetScreen(
 private fun BudgetProgressCard(progress: BudgetProgress) {
     Card(
         modifier = Modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.medium,
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant
-        )
+            containerColor = MaterialTheme.colorScheme.surface
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            // Category name and amounts
+            // Category name + status badge
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -144,12 +152,28 @@ private fun BudgetProgressCard(progress: BudgetProgress) {
             ) {
                 Text(
                     text = progress.categoryName,
-                    style = MaterialTheme.typography.titleMedium
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+
+                BudgetStatusBadge(percentage = progress.percentage)
+            }
+
+            // Spent / budgeted amounts
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "${CurrencyFormatter.format(progress.spent)} of ${CurrencyFormatter.format(progress.budgeted)}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
 
                 Text(
-                    text = "${CurrencyFormatter.format(progress.spent)} / ${CurrencyFormatter.format(progress.budgeted)}",
-                    style = MaterialTheme.typography.bodyLarge,
+                    text = "${progress.percentage}% used",
+                    style = MaterialTheme.typography.labelLarge,
                     color = getProgressColor(progress.percentage)
                 )
             }
@@ -159,31 +183,36 @@ private fun BudgetProgressCard(progress: BudgetProgress) {
                 progress = { (progress.percentage / 100f).coerceIn(0f, 1f) },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(8.dp),
+                    .height(8.dp)
+                    .clip(RoundedCornerShape(4.dp)),
                 color = getProgressColor(progress.percentage),
-                trackColor = MaterialTheme.colorScheme.surfaceVariant,
+                trackColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f)
             )
-
-            // Percentage and status
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Text(
-                    text = "${progress.percentage}% used",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-
-                if (progress.isOverBudget) {
-                    Text(
-                        text = "Over Budget",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.error
-                    )
-                }
-            }
         }
+    }
+}
+
+/**
+ * Small status badge summarizing budget health.
+ */
+@Composable
+private fun BudgetStatusBadge(percentage: Int) {
+    val (text, color) = when {
+        percentage >= 100 -> "Over budget" to ExpenseRed
+        percentage >= 70 -> "Near limit" to WarningAmber
+        else -> "On track" to IncomeGreen
+    }
+
+    Surface(
+        shape = RoundedCornerShape(50),
+        color = color.copy(alpha = 0.14f)
+    ) {
+        Text(
+            text = text,
+            style = MaterialTheme.typography.labelSmall,
+            color = color,
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+        )
     }
 }
 
@@ -193,16 +222,18 @@ private fun BudgetProgressCard(progress: BudgetProgress) {
 @Composable
 private fun BudgetInsightCard(insight: BudgetInsight) {
     val (icon, color) = when (insight.severity) {
-        InsightSeverity.LOW -> Icons.Default.CheckCircle to Color(0xFF4CAF50)
-        InsightSeverity.MEDIUM -> Icons.Default.Warning to Color(0xFFFF9800)
-        InsightSeverity.HIGH -> Icons.Default.Error to MaterialTheme.colorScheme.error
+        InsightSeverity.LOW -> Icons.Default.CheckCircle to IncomeGreen
+        InsightSeverity.MEDIUM -> Icons.Default.Warning to WarningAmber
+        InsightSeverity.HIGH -> Icons.Default.Error to ExpenseRed
     }
 
     Card(
         modifier = Modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.medium,
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant
-        )
+            containerColor = MaterialTheme.colorScheme.surface
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
     ) {
         Row(
             modifier = Modifier
@@ -239,6 +270,15 @@ private fun EmptyBudgetState(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
+        Icon(
+            imageVector = Icons.Default.AccountBalanceWallet,
+            contentDescription = null,
+            modifier = Modifier.size(56.dp),
+            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
         Text(
             text = "No Budgets Set",
             style = MaterialTheme.typography.headlineSmall,
@@ -270,9 +310,9 @@ private fun EmptyBudgetState(
  */
 private fun getProgressColor(percentage: Int): Color {
     return when {
-        percentage < 70 -> Color(0xFF4CAF50)  // Green
-        percentage < 100 -> Color(0xFFFF9800) // Amber
-        else -> Color(0xFFF44336)             // Red
+        percentage < 70 -> IncomeGreen
+        percentage < 100 -> WarningAmber
+        else -> ExpenseRed
     }
 }
 

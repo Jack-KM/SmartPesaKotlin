@@ -3,19 +3,23 @@ package com.example.smartpesa.ui.settings
 import android.content.Intent
 import android.net.Uri
 import android.provider.Settings
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.smartpesa.data.local.entity.TransactionType
+import com.example.smartpesa.ui.theme.IncomeGreen
 
 /**
  * Settings screen with capture mode status and category management
@@ -260,14 +264,21 @@ private fun CaptureModeStatusCard(
                 modifier = Modifier.weight(1f),
                 verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
-                Text(
-                    text = title,
-                    style = MaterialTheme.typography.titleMedium,
-                    color = if (isActive && enabled)
-                        MaterialTheme.colorScheme.onPrimaryContainer
-                    else
-                        MaterialTheme.colorScheme.onSurface
-                )
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    StatusDot(active = isActive && enabled)
+
+                    Text(
+                        text = title,
+                        style = MaterialTheme.typography.titleMedium,
+                        color = if (isActive && enabled)
+                            MaterialTheme.colorScheme.onPrimaryContainer
+                        else
+                            MaterialTheme.colorScheme.onSurface
+                    )
+                }
 
                 Text(
                     text = description,
@@ -304,6 +315,25 @@ private fun CaptureModeStatusCard(
             }
         }
     }
+}
+
+/**
+ * Small status indicator dot (green when active, muted when inactive).
+ */
+@Composable
+private fun StatusDot(active: Boolean) {
+    val color = if (active) {
+        IncomeGreen
+    } else {
+        MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.35f)
+    }
+
+    Box(
+        modifier = Modifier
+            .size(8.dp)
+            .clip(CircleShape)
+            .background(color)
+    )
 }
 
 /**

@@ -21,7 +21,17 @@ object NotificationListenerUtil {
         ) ?: return false
 
         val packageName = context.packageName
-        return enabledListeners.contains(packageName)
+        val serviceComponent = getServiceComponentName(context)
+
+        // The system stores colon-separated component names in two forms:
+        //   com.example.smartpesa/com.example.smartpesa.service.MpesaNotificationListenerService
+        //   com.example.smartpesa/.service.MpesaNotificationListenerService
+        // Match against the full component name or any component belonging to this app.
+        return enabledListeners.split(':').any { listener ->
+            listener == serviceComponent ||
+                listener.startsWith("$packageName/") ||
+                listener.startsWith("$packageName.")
+        }
     }
 
     /**
